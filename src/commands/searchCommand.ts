@@ -15,9 +15,10 @@ export async function findTask() {
     }
     const selected = await vscode.window.showQuickPick(tasks.map(task => ({
         label: task.jobArrayId,
-        description: task.name,
+        description: [task.cluster, task.name].filter(Boolean).join(' | '),
         detail: task.state === TaskState.AWAITING_ACCOUNTING ? vscode.l10n.t('Awaiting completion information') : task.state,
         jobArrayId: task.jobArrayId,
+        cluster: task.cluster,
     })), {
         title: vscode.l10n.t('Find task'),
         placeHolder: vscode.l10n.t('Job ID or task name'),
@@ -25,8 +26,8 @@ export async function findTask() {
     });
     if (!selected) { return; }
 
-    let item = taskViewDataProvider.findTask(selected.jobArrayId);
-    if (!item && currentTasks().some(task => task.jobArrayId === selected.jobArrayId)
+    let item = taskViewDataProvider.findTask(selected.jobArrayId, selected.cluster);
+    if (!item && currentTasks().some(task => task.jobArrayId === selected.jobArrayId && task.cluster === selected.cluster)
         && configService.finishedTaskFilter !== FinishedTaskFilter.ALL) {
         const showAll = vscode.l10n.t('Show all finished tasks');
         const choice = await vscode.window.showInformationMessage(
@@ -34,7 +35,7 @@ export async function findTask() {
         if (choice !== showAll) { return; }
         configService.finishedTaskFilter = FinishedTaskFilter.ALL;
         taskViewDataProvider.refresh();
-        item = taskViewDataProvider.findTask(selected.jobArrayId);
+        item = taskViewDataProvider.findTask(selected.jobArrayId, selected.cluster);
     }
     if (!item) {
         vscode.window.showInformationMessage(vscode.l10n.t('This task is no longer retained.'));

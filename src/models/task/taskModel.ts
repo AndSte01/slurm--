@@ -8,6 +8,7 @@ export interface TaskParams {
     arrayid: number | string | null;
     name: string;
     user: string;
+    cluster?: string | null;
     state: TaskState;
     node: string;
     gres: string | Gres | null;
@@ -43,6 +44,7 @@ export class Task implements BaseTask {
     readonly jobArrayId: string;
     readonly name: string;
     readonly user: string;
+    cluster: string | null;
     state: TaskState;
     node: string;
     readonly gres: Gres | null;
@@ -67,6 +69,8 @@ export class Task implements BaseTask {
         this.jobArrayId = `${this.jobid}${this.arrayid !== null ? `_${this.arrayid}` : ''}`;
         this.name = params.name;
         this.user = params.user;
+        const cluster = params.cluster?.trim();
+        this.cluster = cluster && cluster !== 'N/A' && cluster !== '(null)' ? cluster : null;
         this.state = params.state;
         this.node = params.node;
         this.gres = typeof params.gres === "string" ? (params.gres === 'N/A' ? null : new Gres(params.gres)) : (params.gres ?? null);
@@ -112,6 +116,7 @@ export class Task implements BaseTask {
         this.finished = task.finished;
         this.exitCode = task.exitCode;
         this.state = task.state;
+        this.cluster = task.cluster;
         this.node = task.node;
         this.runningTime = task.runningTime;
         this.reason = task.reason;

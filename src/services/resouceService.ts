@@ -12,6 +12,7 @@ export class ResourceService {
 
     private gresMap: Map<string | null, GresGroup> | null = null;
     private partitionMap: Map<string, GresGroup> | null = null;
+    private clusterMap: Map<string, GresGroup> | null = null;
     private partitionGresMap: Map<string, Map<string | null, GresGroup>> | null = null;
 
     private static _instance: ResourceService | null = null;
@@ -30,6 +31,7 @@ export class ResourceService {
 
         this.gresMap = null;
         this.partitionMap = null;
+        this.clusterMap = null;
         this.partitionGresMap = null;
     }
 
@@ -103,6 +105,29 @@ export class ResourceService {
             this.partitionMap = pmap;
         }
         return this.partitionMap;
+    }
+
+    public getNodeByCluster(): Map<string, GresGroup> {
+        if (!this.clusterMap) {
+            const map = new Map<string, Node[]>();
+            this.nodeList.forEach(node => {
+                if (!map.has(node.cluster)) {
+                    map.set(node.cluster, []);
+                }
+                map.get(node.cluster)!.push(node);
+            });
+
+            this.clusterMap = new Map(
+                [...map].map(([cluster, nodes]) => {
+                    const availableNodes = nodes.filter(node => node.isAvailableState && node.gresList.length !== 0);
+                    const gres = availableNodes.length === 0
+                        ? ResourceGres.empty('')
+                        : ResourceGres.fromArray(availableNodes.map(node => node.gresList.reduce((a, b) => a.add(b), ResourceGres.empty(''))));
+                    return [cluster, { nodes, gres }];
+                })
+            );
+        }
+        return this.clusterMap;
     }
 
     public getNodeByPartitionGres(): Map<string, Map<string | null, GresGroup>> {

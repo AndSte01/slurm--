@@ -9,6 +9,7 @@ export enum NodeState {
 }
 
 export interface NodeParam {
+    cluster?: string,
     nodeid: string,
     available: string,
     memory: string,
@@ -21,6 +22,7 @@ export interface NodeParam {
 }
 
 export class Node {
+    readonly cluster: string;
     readonly nodeid: string;
     public available: string;
     readonly memory: number;
@@ -37,6 +39,8 @@ export class Node {
     constructor(
         param: NodeParam
     ) {
+        const cluster = param.cluster?.trim();
+        this.cluster = cluster && cluster !== 'N/A' && cluster !== '(null)' ? cluster : '';
         this.nodeid = param.nodeid;
         this.available = param.available;
         this.memory = (typeof param.memory === "string" ? parseInt(param.memory) : param.memory) / 1000;

@@ -132,6 +132,9 @@ export function initConfigCmd(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand('slurm--.settedResourceGroupByGres', () => setResourcGroupKey(GresGroupKeys.GRES)));
     context.subscriptions.push(vscode.commands.registerCommand('slurm--.settedResourceGroupByPartition', () => setResourcGroupKey(GresGroupKeys.PARTITION)));
 
+    context.subscriptions.push(vscode.commands.registerCommand('slurm--.setResourceGroupByCluster', () => setResourcGroupKey(GresGroupKeys.CLUSTER)));
+    context.subscriptions.push(vscode.commands.registerCommand('slurm--.settedResourceGroupByCluster', () => setResourcGroupKey(GresGroupKeys.CLUSTER)));
+
     context.subscriptions.push(vscode.commands.registerCommand('slurm--.showTaskShortcutKey', () => setTaskShowShortcutKey(true)));
     context.subscriptions.push(vscode.commands.registerCommand('slurm--.hideTaskShortcutKey', () => setTaskShowShortcutKey(false)));
 

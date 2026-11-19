@@ -17,6 +17,7 @@ export enum GresSortKeys {
 export enum GresGroupKeys {
     GRES = 'gres',
     PARTITION = 'partition',
+    CLUSTER = 'cluster',
 }
 
 export enum SortDirection {
@@ -41,7 +42,7 @@ const DEFAULT_SLURM_COMMAND_BINARIES: Record<SlurmCommandName, string> = {
     srun: 'srun',
 };
 
-export const TaskInfoConfigKeys = ["id", "nodelist", "GRES", "command", "stdout", "stderr", "submit", "start", "finish"];
+export const TaskInfoConfigKeys = ["id", "cluster", "nodelist", "GRES", "command", "stdout", "stderr", "submit", "start", "finish"];
 
 export type TaskInfoConfig = {
     [key in typeof TaskInfoConfigKeys[number]]: boolean;
@@ -72,6 +73,11 @@ class ConfigService {
     }
     public get sinfoShowAllClusters(): boolean {
         return vscode.workspace.getConfiguration('slurm--.commands').get('sinfoShowAllClusters') ?? false;
+    }
+    public get clusters(): string[] {
+        return (vscode.workspace.getConfiguration('slurm--.commands').get<string[]>('clusters') ?? [])
+            .map(cluster => cluster.trim())
+            .filter(Boolean);
     }
     public get taskCacheTimeout(): number {
         return vscode.workspace.getConfiguration('slurm--.tasksPanel').get('cacheTimeout') ?? 1000;
