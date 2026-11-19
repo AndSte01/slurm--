@@ -70,6 +70,12 @@ class ConfigService {
     public get sinfoExtraArgs(): object {
         return vscode.workspace.getConfiguration('slurm--.commands').get('sinfoExtraArgs') ?? {};
     }
+    public get squeueExtraArgs(): object {
+        return vscode.workspace.getConfiguration('slurm--.commands').get('squeueExtraArgs') ?? {};
+    }
+    public get sbatchExtraArgs(): object {
+        return vscode.workspace.getConfiguration('slurm--.commands').get('sbatchExtraArgs') ?? {};
+    }
     public get sinfoShowAllClusters(): boolean {
         return vscode.workspace.getConfiguration('slurm--.commands').get('sinfoShowAllClusters') ?? false;
     }

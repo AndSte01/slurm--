@@ -76,6 +76,8 @@
     "config.commands.binaries.scancel.description": "Command name or path used for `scancel`.",
     "config.commands.binaries.srun.description": "Command name or path used for `srun`.",
     "config.commands.sinfoExtraArgs.description": "Additional arguments for the `sinfo` command. Each key-value pair represents one argument, which must include a leading `-` or `--`. When the `Sinfo Show All Clusters` option is enabled, do not add the -M option again.",
+    "config.commands.squeueExtraArgs.description": "Additional arguments for the `squeue` command. Each key-value pair represents one argument, whose key must include a leading `-` or `--`.",
+    "config.commands.sbatchExtraArgs.description": "Additional arguments for the `sbatch` command. Each key-value pair represents one argument, whose key must include a leading `-` or `--`.",
     "config.commands.sinfoShowAllClusters.description": "When checked, adds the `-M all` argument to the `sinfo` command. Enable this option if GRES resources in the cluster are not fully displayed",
     "config.label.id": "Id",
     "config.label.name": "Name",

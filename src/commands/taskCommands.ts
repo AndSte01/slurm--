@@ -110,7 +110,10 @@ async function refreshUserTasks(background = false) {
         }
     }
     const query = Array.from(fieldMap.entries()).map(([key, value]) => `${key}:${value}`).join(',');
-    const { stdout: out, error: err } = await executeCmd(`${configService.getSlurmCommand('squeue')} ${user} -r --noheader -O ${query}`, cachePath, configService.taskCacheTimeout);
+    const args = Object.entries(configService.squeueExtraArgs)
+        .map(([key, value]) => `${key} ${value}`)
+        .join(' ');
+    const { stdout: out, error: err } = await executeCmd(`${configService.getSlurmCommand('squeue')} ${args} ${user} -r --noheader -O ${query}`, cachePath, configService.taskCacheTimeout);
     if (err) {
         reportQuery('squeue', err, background);
         return;
@@ -268,7 +271,10 @@ async function enterTaskAllocation(task: TaskItem, overlap: boolean) {
     }
 
     // %A is the numeric allocation ID; %i would return array_job_id_index.
-    const { stdout: out, error: err } = await executeCmd(`${configService.getSlurmCommand('squeue')} --noheader --array --jobs=${shellQuote.quote([task.task.jobArrayId])} --format='%A %T'`);
+    const args = Object.entries(configService.squeueExtraArgs)
+        .map(([key, value]) => `${key} ${value}`)
+        .join(' ');
+    const { stdout: out, error: err } = await executeCmd(`${configService.getSlurmCommand('squeue')} ${args} --noheader --array --jobs=${shellQuote.quote([task.task.jobArrayId])} --format='%A %T'`);
     if (err) {
         vscode.window.showErrorMessage(err);
         return;

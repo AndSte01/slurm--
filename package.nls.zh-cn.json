@@ -76,6 +76,8 @@
     "config.commands.binaries.scancel.description": "`scancel` 使用的命令名或路径。",
     "config.commands.binaries.srun.description": "`srun` 使用的命令名或路径。",
     "config.commands.sinfoExtraArgs.description": "用于`sinfo`命令的额外参数。每个键值对表示一个参数，需包含前缀`-`或`--`。当开启`Sinfo Show All Clusters`选项时，请勿重复添加`-M`参数。",
+    "config.commands.squeueExtraArgs.description": "用于`squeue`命令的额外参数。每个键值对表示一个参数，键需包含前缀`-`或`--`。",
+    "config.commands.sbatchExtraArgs.description": "用于`sbatch`命令的额外参数。每个键值对表示一个参数，键需包含前缀`-`或`--`。",
     "config.commands.sinfoShowAllClusters.description": "勾选时向 `sinfo` 命令添加`-M all`参数。当集群中的 GRES 资源显示不完整时，可尝试启用此选项。",
     "config.label.id": "Id",
     "config.label.name": "名称",

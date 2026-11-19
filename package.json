@@ -965,6 +965,26 @@
             }
           }
         },
+        "slurm--.commands.squeueExtraArgs": {
+          "type": "object",
+          "default": {},
+          "markdownDescription": "%config.commands.squeueExtraArgs.description%",
+          "patternProperties": {
+            ".*": {
+              "type": "string"
+            }
+          }
+        },
+        "slurm--.commands.sbatchExtraArgs": {
+          "type": "object",
+          "default": {},
+          "markdownDescription": "%config.commands.sbatchExtraArgs.description%",
+          "patternProperties": {
+            ".*": {
+              "type": "string"
+            }
+          }
+        },
         "slurm--.commands.sinfoShowAllClusters": {
           "type": "boolean",
           "default": false,
