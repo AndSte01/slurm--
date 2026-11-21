@@ -32,6 +32,7 @@ const fieldMap = new Map([
     ["SubmitTime", 20],
     ["StartTime", 20],
     ["EndTime", 20],
+    ["Cluster", 20],
 ]);
 const fieldNames = Array.from(fieldMap.keys());
 
@@ -65,6 +66,7 @@ function extractTask(taskString: string): Task[] {
             arrayid: fields["ArrayTaskID"],
             name: fields["Name"],
             user: fields["Username"],
+            cluster: fields["Cluster"],
             state: fields["State"] as TaskState,
             node: fields["NodeList"],
             gres: fields["Gres"],
@@ -84,7 +86,7 @@ function extractTask(taskString: string): Task[] {
 }
 
 function buildTaskArray(taskList: Task[]): BaseTask[] {
-    const grouped = _.groupBy(taskList, 'jobid');
+    const grouped = _.groupBy(taskList, task => `${task.cluster ?? ''}:${task.jobid}`);
     return Object.values(grouped).map((v) => v[0].arrayid !== null ? new TaskArray(v) : v[0]);
 }
 
@@ -110,7 +112,9 @@ async function refreshUserTasks(background = false) {
         }
     }
     const query = Array.from(fieldMap.entries()).map(([key, value]) => `${key}:${value}`).join(',');
-    const { stdout: out, error: err } = await executeCmd(`${configService.getSlurmCommand('squeue')} ${user} -r --noheader -O ${query}`, cachePath, configService.taskCacheTimeout);
+    const clusters = configService.clusters;
+    const clusterArgs = clusters.length > 0 ? ` --clusters=${shellQuote.quote([clusters.join(',')])}` : '';
+    const { stdout: out, error: err } = await executeCmd(`${configService.getSlurmCommand('squeue')} ${user}${clusterArgs} -r --noheader -O ${query}`, cachePath, configService.taskCacheTimeout);
     if (err) {
         reportQuery('squeue', err, background);
         return;
@@ -130,12 +134,12 @@ async function cancelTask(task: TaskItem) {
         vscode.l10n.t('No')
     );
     if (result === vscode.l10n.t('Yes')) {
-        const { stdout: out, error: err } = await executeCmd(`${configService.getSlurmCommand('scancel')} ${task.task.jobArrayId}`);
+        const { stdout: out, error: err } = await executeCmd(`${configService.getSlurmCommand('scancel')}${clusterArgs(task.task.cluster)} ${task.task.jobArrayId}`);
         if (err) {
             vscode.window.showErrorMessage(err);
             return;
         }
-        taskService.deleteTask(task.task.jobid, task.task.arrayid);
+        taskService.deleteTask(task.task, task.task.arrayid);
         taskView.taskViewDataProvider.refresh();
     }
 }
@@ -147,12 +151,12 @@ async function cancelTaskArray(taskArray: TaskArrayItem) {
         vscode.l10n.t('No')
     );
     if (result === vscode.l10n.t('Yes')) {
-        const { stdout: out, error: err } = await executeCmd(`${configService.getSlurmCommand('scancel')} ${taskArray.taskArray.jobid}`);
+        const { stdout: out, error: err } = await executeCmd(`${configService.getSlurmCommand('scancel')}${clusterArgs(taskArray.taskArray.cluster)} ${taskArray.taskArray.jobid}`);
         if (err) {
             vscode.window.showErrorMessage(err);
             return;
         }
-        taskService.deleteTask(taskArray.taskArray.jobid);
+        taskService.deleteTask(taskArray.taskArray);
         taskView.taskViewDataProvider.refresh();
     }
 }
@@ -169,12 +173,12 @@ async function cancelSelectedTasks() {
     if (result === vscode.l10n.t('Yes')) {
         for (const task of tasks) {
             const cancelId = task.jobArrayId instanceof Array ? task.jobid : task.jobArrayId;
-            const { stdout: out, error: err } = await executeCmd(`${configService.getSlurmCommand('scancel')} ${cancelId}`);
+            const { stdout: out, error: err } = await executeCmd(`${configService.getSlurmCommand('scancel')}${clusterArgs(task.cluster)} ${cancelId}`);
             if (err) {
                 vscode.window.showErrorMessage(err);
                 continue;
             }
-            taskService.deleteTask(task.jobid, task.arrayid);
+            taskService.deleteTask(task, task.arrayid);
         }
         taskView.taskViewDataProvider.refresh();
     }
@@ -190,12 +194,12 @@ async function cancelAllTasks() {
     );
     if (result === vscode.l10n.t('Yes')) {
         for (const task of tasks) {
-            const { stdout: out, error: err } = await executeCmd(`${configService.getSlurmCommand('scancel')} ${task.jobid}`);
+            const { stdout: out, error: err } = await executeCmd(`${configService.getSlurmCommand('scancel')}${clusterArgs(task.cluster)} ${task.jobid}`);
             if (err) {
                 vscode.window.showErrorMessage(err);
                 continue;
             }
-            taskService.deleteTask(task.jobid);
+            taskService.deleteTask(task);
         }
         taskView.taskViewDataProvider.refresh();
     }
@@ -220,14 +224,14 @@ async function unautoRefreshTask() {
 
 async function confirmTask(task: TaskItem) {
     if (task.task.finished) {
-        taskService.deleteTask(task.task.jobid, task.task.arrayid);
+        taskService.deleteTask(task.task, task.task.arrayid);
         taskView.taskViewDataProvider.refresh();
     }
 }
 
 async function confirmTaskArray(taskArray: TaskArrayItem) {
     if (taskArray.taskArray.finished) {
-        taskService.deleteTask(taskArray.taskArray.jobid);
+        taskService.deleteTask(taskArray.taskArray);
         taskView.taskViewDataProvider.refresh();
     }
 }
@@ -250,6 +254,10 @@ async function openStderr(task: TaskItem) {
     task.task.errPath.open();
 }
 
+function clusterArgs(cluster: string | null): string {
+    return cluster ? ` --clusters=${shellQuote.quote([cluster])}` : '';
+}
+
 async function enterTaskAllocation(task: TaskItem, overlap: boolean) {
     if (task.task.state !== TaskState.R) {
         vscode.window.showWarningMessage(vscode.l10n.t('Task is not running.'));
@@ -268,7 +276,8 @@ async function enterTaskAllocation(task: TaskItem, overlap: boolean) {
     }
 
     // %A is the numeric allocation ID; %i would return array_job_id_index.
-    const { stdout: out, error: err } = await executeCmd(`${configService.getSlurmCommand('squeue')} --noheader --array --jobs=${shellQuote.quote([task.task.jobArrayId])} --format='%A %T'`);
+    const clusterArg = clusterArgs(task.task.cluster);
+    const { stdout: out, error: err } = await executeCmd(`${configService.getSlurmCommand('squeue')}${clusterArg} --noheader --array --jobs=${shellQuote.quote([task.task.jobArrayId])} --format='%A %T'`);
     if (err) {
         vscode.window.showErrorMessage(err);
         return;
@@ -279,7 +288,7 @@ async function enterTaskAllocation(task: TaskItem, overlap: boolean) {
         return;
     }
     const overlapArg = overlap ? '--overlap ' : '';
-    const command = `${configService.getSlurmCommand('srun')} ${overlapArg}--jobid=${allocation[1]} --nodes=1 --ntasks=1 --pty ${shellQuote.quote([shell])} -i`;
+    const command = `${configService.getSlurmCommand('srun')}${clusterArg} ${overlapArg}--jobid=${allocation[1]} --nodes=1 --ntasks=1 --pty ${shellQuote.quote([shell])} -i`;
     const terminal = vscode.window.createTerminal(vscode.l10n.t('Slurm Allocation {0}', task.task.jobArrayId));
     terminal.show();
 

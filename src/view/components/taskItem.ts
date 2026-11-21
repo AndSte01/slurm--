@@ -9,9 +9,9 @@ function taskDescription(task: Task): string {
 
 function taskTooltip(task: Task): vscode.MarkdownString {
     return new vscode.MarkdownString(`
-| id | user | status | nodelist | gres |
-|:--:|:--:|:--:|:--:|:--:|
-| ${task.jobArrayId} | ${task.user} | ${task.state} | ${task.node} | ${task.gres ?? 'No GRES'} |
+| id | cluster | user | status | nodelist | gres |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+| ${task.jobArrayId} | ${task.cluster ?? 'N/A'} | ${task.user} | ${task.state} | ${task.node} | ${task.gres ?? 'No GRES'} |
     `);
 }
 
@@ -22,7 +22,7 @@ export class TaskItem extends vscode.TreeItem {
         this.tooltip = taskTooltip(task);
         this.iconPath = taskStateIconMap[task.state] ?? unknownStateIcon;
         this.contextValue = task.state === TaskState.R ? 'runningTaskItem' : 'taskItem';
-        this.id = task.jobArrayId;
+        this.id = `${task.cluster ?? ''}:${task.jobArrayId}`;
     }
 }
 
@@ -51,10 +51,10 @@ function taskArrDescription(taskArray: TaskArray): string {
 
 function taskArrTooltip(taskArray: TaskArray): vscode.MarkdownString {
     return new vscode.MarkdownString(`
-| arrayId | user | status | nodelist | gres |
-|:--:|:--:|:--:|:--:|:--:|
-${taskArray.getSubTasks().slice(0, 10).map(task => `| ${task.arrayid} | ${task.user} | ${task.state} | ${task.node} | ${task.gres ?? 'No GRES'} |`).join('\n')}
-${taskArray.getSubTasks().length > 10 ? '|...|...|...|...|...|' : ''}
+| arrayId | cluster | user | status | nodelist | gres |
+|:--:|:--:|:--:|:--:|:--:|:--:|
+${taskArray.getSubTasks().slice(0, 10).map(task => `| ${task.arrayid} | ${task.cluster ?? 'N/A'} | ${task.user} | ${task.state} | ${task.node} | ${task.gres ?? 'No GRES'} |`).join('\n')}
+${taskArray.getSubTasks().length > 10 ? '|...|...|...|...|...|...|' : ''}
     `);
 }
 
@@ -65,6 +65,6 @@ export class TaskArrayItem extends vscode.TreeItem {
         this.tooltip = taskArrTooltip(taskArray);
         this.iconPath = iconArrMap[taskArray.state];
         this.contextValue = 'taskArrayItem';
-        this.id = 'array_' + taskArray.jobArrayId.join('&');
+        this.id = `array_${taskArray.cluster ?? ''}:${taskArray.jobArrayId.join('&')}`;
     }
 }

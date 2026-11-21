@@ -190,7 +190,8 @@ async function launchTerminal(node: NodeItem) {
     }
     const terminal = vscode.window.createTerminal();
     terminal.show();
-    terminal.sendText(`${configService.getSlurmCommand('srun')} ${gresArg} -p ${node.node.partition} --nodelist=${node.node.nodeid} --mem ${mem} -t ${time} --cpus-per-task ${cpu} --pty ${shell} -i`);
+    const clusterArg = node.node.cluster ? ` --clusters=${shellQuote.quote([node.node.cluster])}` : '';
+    terminal.sendText(`${configService.getSlurmCommand('srun')}${clusterArg} ${gresArg} -p ${shellQuote.quote([node.node.partition])} --nodelist=${shellQuote.quote([node.node.nodeid])} --mem ${shellQuote.quote([mem])} -t ${shellQuote.quote([time])} --cpus-per-task ${shellQuote.quote([cpu])} --pty ${shellQuote.quote([shell])} -i`);
 }
 
 async function enqueueCurrentFile() {

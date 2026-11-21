@@ -27,6 +27,10 @@ export class TaskArray implements BaseTask {
         return this.getSubTasks().map(v => v.jobArrayId);
     }
 
+    public get cluster(): string | null {
+        return this.getSubTasks()[0]?.cluster ?? null;
+    }
+
 
     public get state(): TaskState {
         const tasks = this.getSubTasks();

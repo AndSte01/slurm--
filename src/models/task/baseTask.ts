@@ -17,6 +17,7 @@ export interface BaseTask {
     readonly jobArrayId: string | string[];
     readonly arrayid?: number | null;
     readonly name: string;
+    readonly cluster: string | null;
     state: TaskState;
 
     finished: boolean;

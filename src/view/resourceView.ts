@@ -24,9 +24,21 @@ function getNodeGroupedByPartition(): GresItem[] {
     });
 }
 
+function getNodeGroupedByCluster(): GresItem[] {
+    const clusterNodes = resourceService.getNodeByCluster();
+    return [...clusterNodes]
+        .sort(([a], [b]) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+        .map(([cluster, group]) => new GresItem(
+            group.gres,
+            group.nodes,
+            `${cluster || vscode.l10n.t('Unknown cluster')} (${group.gres!.availableNum}/${group.gres!.totalNum})`
+        ));
+}
+
 const getGroupedNodeFn = {
     [GresGroupKeys.GRES]: getNodeGroupedByGres,
     [GresGroupKeys.PARTITION]: getNodeGroupedByPartition,
+    [GresGroupKeys.CLUSTER]: getNodeGroupedByCluster,
 };
 
 export class ResourceViewDataProvider implements vscode.TreeDataProvider<NodeItem | GresItem> {

@@ -8,6 +8,7 @@ import { resourceTreeView, resourceViewDataProvider } from '../view/resourceView
 import { resourceService, configService } from '../services';
 import { GresItem, NodeItem } from '../view/components';
 import * as path from 'path';
+import * as shellQuote from 'shell-quote';
 
 let autoRefreshTimer: NodeJS.Timeout;
 
@@ -21,6 +22,7 @@ const fieldMap = new Map([
     ["Partition", 20],
     ["StateLong", 20],
     ["CPUsState", 20],
+    ["Cluster", 20],
 ]);
 const fieldNames = Array.from(fieldMap.keys());
 
@@ -49,6 +51,7 @@ function extractNodes(nodeString: string): Node[] {
             return rec;
         }, {});
         const node = new Node({
+            cluster: fields['Cluster'],
             nodeid: fields['NODELIST'],
             available: fields['Available'],
             memory: fields['Memory'],
@@ -72,14 +75,17 @@ async function refreshResources(background = false) {
     }
     const argsObj = configService.sinfoExtraArgs;
     const showAll = configService.sinfoShowAllClusters;
-    if ('-M' in argsObj && showAll) {
-        reportQuery('sinfo', 'Do not add the -M option when "Sinfo Show All Clusters" is enabled.', background);
+    const clusters = configService.clusters;
+    if (('-M' in argsObj || '--clusters' in argsObj) && (showAll || clusters.length > 0)) {
+        reportQuery('sinfo', 'Do not add a cluster option in "Sinfo Extra Args" when a cluster list or "Sinfo Show All Clusters" is configured.', background);
         return;
     }
 
     const args = Object.entries(argsObj)
         .map(([key, value]) => `${key} ${value}`)
-        .join(' ') + (showAll ? ' -M all' : '');
+        .join(' ') + (clusters.length > 0
+            ? ` --clusters=${shellQuote.quote([clusters.join(',')])}`
+            : showAll ? ' -M all' : '');
     
     const query = Array.from(fieldMap.entries()).map(([key, value]) => `${key}:${value}`).join(',');
     const { stdout: out, error: err } = await executeCmd(`${configService.getSlurmCommand('sinfo')} --noheader --Node ${args.trim()} -O ${query}`, cachePath, configService.resourceCacheTimeout);

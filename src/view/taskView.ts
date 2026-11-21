@@ -8,6 +8,7 @@ import { resignFn } from '../utils/utils';
 function getTaskInfoItems(task: Task): vscode.TreeItem[] {
     return [
         ...(configService.taskDisplayInfo.id ? [new InfoItem(task.jobArrayId, 'id'),] : []),
+        ...(configService.taskDisplayInfo.cluster ? [new InfoItem(task.cluster ?? 'N/A', 'cluster'),] : []),
         ...(configService.taskDisplayInfo.nodelist && task.node.length !== 0 ? [new InfoItem(task.node, 'nodelist'),] : []),
         ...(configService.taskDisplayInfo.GRES ? [new InfoItem(task.gres?.toString() ?? 'No GRES', 'GRES'),] : []),
         ...(configService.taskDisplayInfo.command ? [new LogFileItem(task.command, 'command', undefined, configService.taskShowFilenameOnly),] : []),
@@ -163,16 +164,16 @@ export class TaskViewDataProvider implements vscode.TreeDataProvider<AllItem> {
         return children;
     }
 
-    findTask(jobArrayId: string): TaskItem | FinishedTaskItem | undefined {
+    findTask(jobArrayId: string, cluster: string | null = null): TaskItem | FinishedTaskItem | undefined {
         for (const group of this.getChildren()) {
             for (const item of this.getChildren(group)) {
-                if ((item instanceof TaskItem || item instanceof FinishedTaskItem) && item.task.jobArrayId === jobArrayId) {
+                if ((item instanceof TaskItem || item instanceof FinishedTaskItem) && item.task.jobArrayId === jobArrayId && item.task.cluster === cluster) {
                     return item;
                 }
                 if (item instanceof TaskArrayItem || item instanceof FinishedTaskArrayItem) {
-                    if (!item.taskArray.getSubTasks().some(task => task.jobArrayId === jobArrayId)) { continue; }
+                    if (!item.taskArray.getSubTasks().some(task => task.jobArrayId === jobArrayId && task.cluster === cluster)) { continue; }
                     return this.getChildren(item).find((child): child is TaskItem | FinishedTaskItem =>
-                        (child instanceof TaskItem || child instanceof FinishedTaskItem) && child.task.jobArrayId === jobArrayId);
+                        (child instanceof TaskItem || child instanceof FinishedTaskItem) && child.task.jobArrayId === jobArrayId && child.task.cluster === cluster);
                 }
             }
         }
